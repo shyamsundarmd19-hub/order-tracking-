@@ -1,236 +1,145 @@
-<div align="center">
+# 📦 SwiftTrack - Real-Time Order Tracking & Logistics Platform
 
-# 📦 SwiftTrack
-### *Enterprise-Grade Real-Time Order Tracking & Logistics Fulfillment Platform*
-
-[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![Flask](https://img.shields.io/badge/Flask-3.1%2B-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Supported-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-[![Leaflet.js](https://img.shields.io/badge/Leaflet.js-OpenStreetMap-199900?style=for-the-badge&logo=leaflet&logoColor=white)](https://leafletjs.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-F59E0B?style=for-the-badge)](LICENSE)
-
-<br/>
-
-**SwiftTrack** is a high-performance, single-page logistics tracking and warehouse management application. Designed with a clean **Off-White & Warm Amber** theme (`#FDFDFB`, `#F59E0B`), it delivers end-to-end parcel visibility with interactive GPS map routing, dynamic scannable QR passes, OTP-gated physical delivery verification, and post-delivery customer reviews.
-
-[Explore Features](#-core-features) • [Quick Start](#-quick-start) • [Architecture](#-system-architecture) • [API Reference](#-api-endpoints) • [Tech Stack](#-technology-stack)
-
-</div>
+A full-stack, enterprise-grade logistics fulfillment and order tracking platform built with **Python Flask**, **MongoDB / JSON Fallback**, **Leaflet.js**, **JavaScript (ES6)**, and **HTML5/CSS3**.
 
 ---
 
-## 📑 Table of Contents
-- [✨ Core Features](#-core-features)
-- [🏗️ System Architecture](#️-system-architecture)
-- [💻 Technology Stack](#-technology-stack)
-- [🚀 Quick Start](#-quick-start)
-- [🔐 Demo Credentials & Sample Data](#-demo-credentials--sample-data)
-- [📡 API Endpoints](#-api-endpoints)
-- [📁 Folder Structure](#-folder-structure)
-- [⚙️ Configuration & Environment Variables](#️-configuration--environment-variables)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
+## 🌟 Key Features
+
+### Authentication & Role-Based Access Control:
+- **Admin Login** with secure PIN-based authentication (`admin123`).
+- Role-protected administrative routes for dispatch management and operations control.
+- Customer self-service portal requiring no authentication for real-time tracking via unique Order IDs.
+
+### Customer Tracking & Fulfillment Module:
+- Real-time 6-stage milestone tracker (*Order Placed* → *Confirmed* → *Packed* → *Shipped* → *Out for Delivery* → *Delivered*).
+- Instant order cancellation workflow available exclusively during the initial *Order Placed* status.
+- Secure auto-generated 4-digit Delivery OTP attached to every consignment for physical handover verification.
+- Printable order invoices with price breakdowns, taxes, shipping costs, and print-optimized CSS layout.
+- Dynamic client-side QR Code pass generation (`qrcode.js`) encoding direct tracking URLs (`/?track=ORD...`).
+
+### Geospatial Radar & Interactive Mapping:
+- Zero-API-key interactive routing powered by **Leaflet.js** and **OpenStreetMap**.
+- Real-time waypoint plotting: Origin Warehouses (🏭), Sorting Hubs (🚚), Destination Addresses (🏠), and Live Delivery Couriers (📍) with pulsating radar animations.
+- Dynamic polyline route curve generation linking origin and destination coordinates.
+
+### Operations & Logistics Management:
+- Real-time operations counters: Total Orders, Pending/Processing, In-Transit, and Delivered.
+- Live status dispatcher allowing warehouse operators to push state updates and hub locations instantly.
+- Strict OTP verification barrier: Couriers and administrators cannot transition an order to *Delivered* without entering the customer's matching 4-digit PIN.
+- Dispatch hub manager to dynamically configure active fulfillment hubs and update administrator access PINs.
+- One-click bulk export of order logs, timestamps, OTPs, and reviews into structured `.csv` files.
+
+### Dual-Engine Intelligent Persistence:
+- Direct support for local MongoDB instances and cloud-hosted MongoDB Atlas via `MONGO_URI`.
+- Zero-setup local disk fallback using `mongomock` and JSON file persistence (`backend/data/orders.json` & `backend/data/settings.json`) when no database engine is installed.
+
+### Post-Delivery Feedback Module:
+- In-app feedback form revealed automatically upon successful package delivery.
+- 5-star customer rating system and qualitative comment submission stored directly in the database.
 
 ---
 
-## ✨ Core Features
+## 📂 Project Structure
 
-### 👤 Customer Experience Portal
-- **⚡ Single-Page Architecture (SPA)**: Zero page reloads — smooth transitions, real-time feedback banners, and reactive search.
-- **🛒 Instant Order Placement**: Place orders with customer details, item quantities, price calculations, and warehouse origin points.
-- **📈 6-Step Visual Milestone Stepper**: Real-time progression tracking through (*Order Placed* → *Confirmed* → *Packed* → *Shipped* → *Out for Delivery* → *Delivered*).
-- **🗺️ Interactive Logistics Map (Leaflet.js + OpenStreetMap)**:
-  - Plots origin warehouses (🏭), intermediate sorting hubs (🚚), live dispatch beacons (📍 with pulsing radar animation), and destination addresses (🏠).
-  - Connects journey points with dynamic polyline route curves without requiring external paid API keys.
-- **📲 Dynamic QR Code Generator (`qrcode.js`)**: Automatically generates a scannable QR pass encoding the order URL (`/?track=ORD...`) for instant mobile verification.
-- **🔑 Secure 4-Digit Delivery OTP**: Unique verification PIN generated per order for secure parcel handover.
-- **📄 Printable Order Receipts**: Modal with invoice breakdown, taxes, shipping, customer details, and print-ready CSS formatting.
-- **⭐ Post-Delivery Feedback & 5-Star Reviews**: Rating and feedback box revealed automatically upon package delivery, stored directly in the database.
-
----
-
-### 🛡️ Operations & Admin Management Console
-- **🔐 PIN-Protected Access Control**: Restricted management portal with customizable administrative PIN authentication.
-- **📊 Real-Time Operations Metrics**: Live counters for Total Orders, Pending/Processing, In-Transit/Shipped, and Delivered packages.
-- **🔄 Live Status Dispatcher**: Real-time status transitions and custom delivery hub assignments with instant sync to the customer tracking view.
-- **🔒 OTP-Gated Delivery Verification**: Enforces security by requiring administrators or courier agents to enter the customer's 4-digit OTP before marking an order as *Delivered*.
-- **⚙️ Configurable Hub & Security Settings**: Manage active fulfillment hubs, dispatch stations, and update administrator passcodes dynamically.
-- **📥 Instant CSV Data Export**: One-click download of full order logs, delivery OTPs, timestamps, and customer ratings into standard `.csv` spreadsheets.
-
----
-
-### 💾 Dual-Engine Intelligent Persistence Layer
-- **Live MongoDB Connection**: Automatically connects to local MongoDB instances or **MongoDB Atlas Cloud Clusters** via `MONGO_URI`.
-- **Zero-Setup Disk Fallback (`mongomock` + JSON Persistence)**: If MongoDB is not installed, the app automatically activates an in-memory virtual database backed by persistent disk storage (`backend/data/orders.json` & `backend/data/settings.json`), ensuring **zero data loss across server restarts**.
-
----
-
-## 🏗️ System Architecture
-
-```mermaid
-flowchart TD
-    subgraph Client["🖥️ Single Page Application (Frontend)"]
-        UI["🎨 UI Layer (HTML5 / Vanilla CSS3 / Plus Jakarta Sans)"]
-        JS["⚡ Client Core Engine (Vanilla ES6+ JS)"]
-        MAP["🗺️ Leaflet.js + OpenStreetMap Radar"]
-        QR["📲 QRCode.js Dynamic Generator"]
-    end
-
-    subgraph Backend["⚙️ Flask Application Server"]
-        ROUTER["🔀 REST API Routing Engine"]
-        AUTH["🔐 Admin Authentication & OTP Guard"]
-        SVC["📦 Order Fulfillment & Tracking Service"]
-    end
-
-    subgraph Storage["💾 Persistence Layer"]
-        MONGO[("🍃 MongoDB Database / Atlas")]
-        DISK[("📁 JSON Disk Storage (backend/data/)")]
-    end
-
-    UI --> JS
-    JS --> MAP
-    JS --> QR
-    JS -->|Fetch API / JSON| ROUTER
-    ROUTER --> AUTH
-    ROUTER --> SVC
-    SVC -->|Live DB| MONGO
-    SVC -->|Fallback Sync| DISK
+```text
+order-tracking-/
+│── backend/
+│   ├── app.py              # Main Flask application, REST APIs & logic
+│   ├── requirements.txt    # Backend Python dependencies
+│   └── data/               # Persistent disk fallback storage
+│       ├── orders.json     # Serialized order entries
+│       └── settings.json   # Configuration and active hub records
+│── frontend/
+│   ├── templates/
+│   │   └── index.html      # Master SPA layout, modals, map & timeline
+│   └── static/
+│       ├── css/
+│       │   └── style.css   # Custom warm amber styling, tokens & components
+│       └── js/
+│           └── app.js      # Client controller, Leaflet map engine & QR generator
+│── .gitignore              # Git ignore configuration
+│── LICENSE                 # Project license file
+└── README.md               # Project documentation & instructions
 ```
 
 ---
 
-## 💻 Technology Stack
+## 💻 Installation & Setup
 
-| Layer | Technology | Purpose |
-| :--- | :--- | :--- |
-| **Backend Framework** | **Python 3.10+ / Flask 3.1+** | Lightweight, high-performance RESTful API microservice |
-| **CORS Middleware** | **Flask-CORS** | Cross-Origin Resource Sharing handling |
-| **Database Driver** | **PyMongo 4.6+** | Official MongoDB driver for BSON/JSON operations |
-| **In-Memory Fallback** | **mongomock 4.3+** | Virtual in-memory MongoDB mock engine |
-| **UI Structure** | **HTML5 (Semantic SPA)** | Clean, accessible single-page layout |
-| **Design System** | **Modern Vanilla CSS3** | Custom design tokens, glassmorphism, responsive CSS grid/flexbox |
-| **Typography** | **Plus Jakarta Sans & Outfit** | Modern, readable Google Fonts |
-| **Geospatial Mapping** | **Leaflet.js 1.9+ & OpenStreetMap** | Zero-API-key interactive map routing & live radar markers |
-| **QR Code Engine** | **QRCode.js** | Client-side scannable barcode generator |
+### Prerequisites
+- Python 3.10+ installed.
+- MongoDB Server *(Optional, automatic local JSON persistence fallback included for development)*.
 
----
-
-## 🚀 Quick Start
-
-### 1. Clone the Repository
+### 1. Clone / Extract Repository
+Ensure you are in the project root directory:
 ```bash
 git clone https://github.com/shyamsundarmd19-hub/order-tracking-.git
 cd order-tracking-
 ```
 
-### 2. Install Dependencies
+### 2. Install Python Dependencies
 ```bash
 cd backend
 pip install -r requirements.txt
 ```
-
-### 3. Start the Server
+Or on Windows:
 ```bash
-python app.py
+py -3 -m pip install -r requirements.txt
 ```
 
-### 4. Launch Application
-Open your browser and visit:
-```text
-http://127.0.0.1:5000
-```
+### 3. Database Setup
 
----
-
-## 🔐 Demo Credentials & Sample Data
-
-| Role / Entity | Identifier | Default Security PIN / OTP | Notes |
-| :--- | :--- | :--- | :--- |
-| **Administrator** | `Admin Portal` | `admin123` | Unlocks management console & settings |
-| **In-Transit Shipment** | `ORD1001` | OTP: `4821` | Live route on interactive radar map |
-| **Delivered Shipment** | `ORD1002` | OTP: `7392` | Includes verified 5-star customer review |
-| **New Orders** | Sequential (`ORD1003`+) | Auto-Generated 4-digit PIN | Instantly trackable with persistent auto-save |
-
----
-
-## 📡 API Endpoints
-
-### 🛒 Customer Endpoints
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/` | Serves the Single-Page Application interface |
-| `POST` | `/api/orders` | Create a new order with auto-generated 4-digit OTP & estimated delivery |
-| `GET` | `/api/orders/<order_id>/track` | Fetch real-time order status, OTP, and milestone history |
-| `PUT` | `/api/orders/<order_id>/cancel` | Cancel order (valid only in *Order Placed* status) |
-| `POST` | `/api/orders/<order_id>/review` | Submit 5-star customer rating and feedback comment |
-
-### 🛡️ Admin & Logistics Endpoints
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/api/admin/verify-pin` | Authenticate administrative PIN |
-| `GET` | `/api/admin/orders` | Retrieve all orders (supports `?status=` filter) |
-| `PUT` | `/api/admin/orders/<order_id>/status` | Update status & milestone location (**requires OTP for *Delivered***) |
-| `GET` | `/api/admin/metrics` | Returns order counts and status breakdown analytics |
-| `GET` | `/api/admin/settings` | Fetch administrator PIN and active hub registry |
-| `PUT` | `/api/admin/settings` | Update security PIN and active delivery hubs |
-| `GET` | `/api/admin/export` | Download structured CSV spreadsheet of all orders and reviews |
-
----
-
-## 📁 Folder Structure
-
-```text
-order-tracking-/
-├── backend/
-│   ├── app.py                  # Core Flask server, REST APIs & persistence manager
-│   ├── requirements.txt        # Python package dependencies
-│   └── data/                   # Persistent storage directory
-│       ├── orders.json         # Auto-saved order registry
-│       └── settings.json       # Auto-saved configuration & dispatch hubs
-├── frontend/
-│   ├── templates/
-│   │   └── index.html          # SPA markup with modals, map & timeline
-│   └── static/
-│       ├── css/
-│       │   └── style.css       # White + Mild Warm Amber design tokens & components
-│       └── js/
-│           └── app.js          # Client controller, Leaflet map, QR & API integration
-├── .gitignore                  # Git ignore rules for Python & OS artifacts
-└── README.md                   # Project documentation
-```
-
----
-
-## ⚙️ Configuration & Environment Variables
-
-SwiftTrack works out-of-the-box with zero configuration. Optional environment variables can be set:
-
-| Variable | Default Value | Description |
-| :--- | :--- | :--- |
-| `PORT` | `5000` | Port on which the Flask server listens |
-| `MONGO_URI` | `mongodb://localhost:27017/` | Connection string for local MongoDB or MongoDB Atlas |
-
-To connect to **MongoDB Atlas Cloud**, set the environment variable:
+#### Option A: MongoDB Cloud / Local Server (Production Mode)
+Set the MongoDB connection string using environment variables:
 ```bash
 export MONGO_URI="mongodb+srv://<username>:<password>@cluster.mongodb.net/?retryWrites=true&w=majority"
 ```
+Or for local instances:
+```bash
+export MONGO_URI="mongodb://localhost:27017/"
+```
+
+#### Option B: Automatic In-Memory & JSON Fallback (Development / Out-of-the-Box Mode)
+If a local or remote MongoDB instance is not detected, the system automatically initializes a virtual database via `mongomock` paired with auto-saving JSON storage at `backend/data/orders.json` and `backend/data/settings.json`, ensuring zero data loss across server restarts without manual database installation.
+
+### 4. Run the Application
+```bash
+python app.py
+```
+Open your browser and visit: **http://127.0.0.1:5000**
 
 ---
 
-## 🤝 Contributing
+## 🌐 Live Demo
+- **Repository URL:** [https://github.com/shyamsundarmd19-hub/order-tracking-](https://github.com/shyamsundarmd19-hub/order-tracking-)
+- **Live Local Access:** [http://127.0.0.1:5000](http://127.0.0.1:5000)
 
-Contributions, issues, and feature requests are welcome!
-1. Fork the Project (`https://github.com/shyamsundarmd19-hub/order-tracking-/fork`)
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+---
+
+## 🔑 Default Accounts & Sample Tracking Data (Created Automatically)
+
+| Role / Entity | Identifier | Default Password / OTP | Features Accessible |
+| :--- | :--- | :--- | :--- |
+| **Administrator** | `Admin Portal` | `admin123` | Operations Dashboard, Status Dispatcher, Delivery Verification, Settings, CSV Export |
+| **In-Transit Order** | `ORD1001` | OTP: `4821` | Live route rendering on interactive radar map, dynamic QR code pass |
+| **Delivered Order** | `ORD1002` | OTP: `7392` | Completed milestone history, verified 5-star customer review display |
+| **New Orders** | Auto-Generated (`ORD1003`+) | Unique 4-digit PIN | Instant placement, live tracking, order cancellation |
+
+---
+
+## 🔒 Security Best Practices Implemented
+
+- **OTP Handover Verification**: Prevents unauthorized order completion by enforcing matching OTP inputs during courier delivery.
+- **PIN-Protected Admin Console**: Critical state transitions and hub settings restricted behind administrative authentication.
+- **CORS Negotiation**: Managed through `Flask-CORS` to prevent unauthorized cross-origin data extraction.
+- **Client-Side Sanitization**: Input validation across forms to prevent malformed data persistence in JSON/Mongo records.
 
 ---
 
 ## 📄 License
 
-Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
+Distributed under the **MIT License**. See `LICENSE` for more information.
 
 <div align="center">
   <sub>Built with ❤️ by <a href="https://github.com/shyamsundarmd19-hub">Shyam Sundar</a></sub>
