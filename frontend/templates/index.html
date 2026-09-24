@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SwiftTrack - Real-Time Single-Page Order Tracking & Operations Management System">
+    <title>SwiftTrack - Real-Time Order Tracking & Management</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet.js Map CSS (OpenStreetMap - Zero API Key) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+
+    <!-- Core Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="top-navbar no-print">
+        <div class="nav-container">
+            <div class="nav-brand" id="brand-logo">
+                <span class="brand-icon">📦</span>
+                <span class="brand-name">SwiftTrack</span>
+            </div>
+
+            <nav class="nav-actions" aria-label="Portal Navigation">
+                <button type="button" id="nav-btn-customer" class="nav-pill active" aria-controls="customer-view" aria-selected="true">
+                    <span class="nav-icon">👤</span>
+                    <span>Customer Portal</span>
+                </button>
+                
+                <button type="button" id="nav-btn-admin" class="nav-pill" aria-controls="admin-view" aria-selected="false">
+                    <span class="nav-icon">🔐</span>
+                    <span>Admin Login</span>
+                </button>
+
+                <button type="button" id="nav-btn-logout" class="nav-pill nav-pill-danger hidden" aria-label="Admin Logout">
+                    <span class="nav-icon">🚪</span>
+                    <span>Logout</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- MAIN WRAPPER -->
+    <main class="main-content no-print">
+
+        <!-- ==================================================== -->
+        <!-- 1. CUSTOMER VIEW CONTAINER (Active by Default)       -->
+        <!-- ==================================================== -->
+        <section id="customer-view" class="view-panel active" aria-labelledby="customer-portal-title">
+            
+            <div class="section-hero">
+                <div class="hero-badge">⚡ Live Order Fulfillment</div>
+                <h1 id="customer-portal-title" class="hero-heading">Track or Place Your Order Seamlessly</h1>
+                <p class="hero-subtext">Interactive logistics map, live GPS route, secure OTP verification, and instant receipts.</p>
+            </div>
+
+            <div class="customer-grid">
+                
+                <!-- CARD 1: PLACE AN ORDER FORM -->
+                <article class="card form-card" id="place-order-card">
+                    <div class="card-header">
+                        <div class="card-icon-badge">🛍️</div>
+                        <div>
+                            <h2 class="card-title">Place an Order</h2>
+                            <p class="card-subtitle">Fill in the details to submit a new shipment request</p>
+                        </div>
+                    </div>
+
+                    <form id="order-form" class="app-form" novalidate>
+                        <div class="form-group">
+                            <label for="customer-name" class="form-label">Customer Name <span class="required">*</span></label>
+                            <input type="text" id="customer-name" name="customer_name" class="form-input" placeholder="e.g. Alex Morgan" required autocomplete="name">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="product-name" class="form-label">Product Name <span class="required">*</span></label>
+                            <input type="text" id="product-name" name="product_name" class="form-input" placeholder="e.g. Sony WH-1000XM5 Headphones" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-half">
+                                <label for="product-price" class="form-label">Price ($) <span class="required">*</span></label>
+                                <input type="number" id="product-price" name="price" class="form-input" placeholder="299.99" min="0.01" step="0.01" required>
+                            </div>
+
+                            <div class="form-group col-half">
+                                <label for="product-quantity" class="form-label">Quantity <span class="required">*</span></label>
+                                <input type="number" id="product-quantity" name="quantity" class="form-input" placeholder="1" min="1" step="1" value="1" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="order-location" class="form-label">Dispatch Origin / Warehouse <span class="optional">(Optional)</span></label>
+                            <input type="text" id="order-location" name="location" class="form-input" placeholder="Default: Warehouse - Central Hub">
+                        </div>
+
+                        <button type="submit" id="btn-submit-order" class="btn btn-primary btn-block">
+                            <span class="btn-text">Submit Order</span>
+                            <span class="btn-icon">→</span>
+                        </button>
+
+                        <div id="order-form-feedback" class="feedback-box hidden" role="alert"></div>
+                    </form>
+                </article>
+
+                <!-- CARD 2: TRACK YOUR ORDER SEARCH & TIMELINE -->
+                <article class="card tracking-card" id="track-order-card">
+                    <div class="card-header">
+                        <div class="card-icon-badge">📍</div>
+                        <div>
+                            <h2 class="card-title">Track Your Order</h2>
+                            <p class="card-subtitle">Enter your unique Order ID to view real-time timeline & map</p>
+                        </div>
+                    </div>
+
+                    <form id="track-form" class="track-search-form" role="search">
+                        <div class="search-input-wrapper">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="track-order-id" class="form-input search-input" placeholder="Enter Order ID (e.g. ORD1001)" required autocomplete="off" spellcheck="false">
+                            <button type="submit" id="btn-track-submit" class="btn btn-accent">
+                                <span>Track</span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- TIMELINE & ORDER DETAILS CONTAINER -->
+                    <div id="tracking-result-container" class="tracking-result-container">
+                        
+                        <!-- Empty State Placeholder -->
+                        <div id="tracking-empty-state" class="empty-state">
+                            <div class="empty-icon">📦</div>
+                            <h3 class="empty-title">No Order Selected</h3>
+                            <p class="empty-text">Enter an Order ID above or place a new order to inspect its journey.</p>
+                        </div>
+
+                        <!-- Live Order Details & Status Bar (Filled via JS) -->
+                        <div id="tracking-order-details" class="tracking-details-box hidden">
+                            <div class="order-summary-header">
+                                <div>
+                                    <div class="summary-top-row">
+                                        <span class="order-id-tag" id="track-display-id">ORD1001</span>
+                                        <span class="est-delivery-badge" id="track-display-est-delivery">📅 Est. Delivery: Sep 24, 2026</span>
+                                    </div>
+                                    <h3 class="order-item-title" id="track-display-product">Product Name</h3>
+                                    <p class="order-meta-info" id="track-display-meta">Customer: Alex Morgan • Qty: 1 • Total: $299.99</p>
+                                </div>
+                                <div class="status-pill-container">
+                                    <span class="status-badge" id="track-display-status">Order Placed</span>
+                                </div>
+                            </div>
+
+                            <!-- Customer Quick Actions Bar & QR Code Block -->
+                            <div class="tracking-sub-header-grid">
+                                <div class="tracking-actions-bar">
+                                    <button type="button" id="btn-view-invoice" class="btn btn-sm btn-secondary">
+                                        <span>📄 Download Receipt</span>
+                                    </button>
+                                    <button type="button" id="btn-cancel-order" class="btn btn-sm btn-outline-danger" title="Cancel this order (Only valid before processing)">
+                                        <span>❌ Cancel Order</span>
+                                    </button>
+                                </div>
+
+                                <!-- Dynamic QR Code Badge -->
+                                <div class="qrcode-badge-wrapper">
+                                    <div id="tracking-qrcode" class="qrcode-box"></div>
+                                    <div class="qrcode-info">
+                                        <span class="qrcode-title">📲 Mobile QR Pass</span>
+                                        <p class="qrcode-sub">Scan for live mobile tracking</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Secure 4-Digit Delivery Verification OTP Card -->
+                            <div class="otp-security-card" id="track-otp-card">
+                                <div class="otp-icon-badge">🔑</div>
+                                <div class="otp-body">
+                                    <span class="otp-title">Secure Delivery Verification PIN</span>
+                                    <div class="otp-pin-display" id="track-display-otp">4821</div>
+                                    <p class="otp-note">Share this 4-digit code with the courier agent only upon physical arrival of your parcel.</p>
+                                </div>
+                            </div>
+
+                            <!-- Visual Step Progress Bar (6 Steps) -->
+                            <div class="status-stepper" id="visual-status-stepper" aria-label="Delivery Milestones">
+                                <div class="step-item" data-step="Order Placed">
+                                    <div class="step-dot"></div>
+                                    <span class="step-label">Placed</span>
+                                </div>
+                                <div class="step-line"></div>
+                                <div class="step-item" data-step="Confirmed">
+                                    <div class="step-dot"></div>
+                                    <span class="step-label">Confirmed</span>
+                                </div>
+                                <div class="step-line"></div>
+                                <div class="step-item" data-step="Packed">
+                                    <div class="step-dot"></div>
+                                    <span class="step-label">Packed</span>
+                                </div>
+                                <div class="step-line"></div>
+                                <div class="step-item" data-step="Shipped">
+                                    <div class="step-dot"></div>
+                                    <span class="step-label">Shipped</span>
+                                </div>
+                                <div class="step-line"></div>
+                                <div class="step-item" data-step="Out for Delivery">
+                                    <div class="step-dot"></div>
+                                    <span class="step-label">Out for Delivery</span>
+                                </div>
+                                <div class="step-line"></div>
+                                <div class="step-item" data-step="Delivered">
+                                    <div class="step-dot"></div>
+                                    <span class="step-label">Delivered</span>
+                                </div>
+                            </div>
+
+                            <!-- INTERACTIVE LOGISTICS MAP (Leaflet.js + OpenStreetMap) -->
+                            <div class="logistics-map-card">
+                                <div class="map-card-header">
+                                    <div class="map-title-row">
+                                        <span class="map-icon">🗺️</span>
+                                        <h4 class="map-heading">Live Logistics Radar & Transit Route</h4>
+                                    </div>
+                                    <span class="live-route-pill">● Live Dispatch GPS</span>
+                                </div>
+                                <div id="tracking-map" class="tracking-map"></div>
+                            </div>
+
+                            <!-- POST-DELIVERY 5-STAR RATING & REVIEW CARD -->
+                            <div id="delivery-review-container" class="delivery-review-card hidden">
+                                <div class="review-header">
+                                    <div class="review-icon-badge">⭐</div>
+                                    <div>
+                                        <h4 class="review-title">Rate Your Delivery Experience</h4>
+                                        <p class="review-subtitle">Your package has arrived! How was the service?</p>
+                                    </div>
+                                </div>
+
+                                <form id="order-review-form" class="review-form">
+                                    <div class="star-rating-box">
+                                        <div class="stars-list" id="star-rating-list">
+                                            <button type="button" class="star-btn" data-rating="1" aria-label="1 star">★</button>
+                                            <button type="button" class="star-btn" data-rating="2" aria-label="2 stars">★</button>
+                                            <button type="button" class="star-btn" data-rating="3" aria-label="3 stars">★</button>
+                                            <button type="button" class="star-btn" data-rating="4" aria-label="4 stars">★</button>
+                                            <button type="button" class="star-btn" data-rating="5" aria-label="5 stars">★</button>
+                                        </div>
+                                        <span class="rating-label-text" id="rating-label-text">Select a rating</span>
+                                    </div>
+
+                                    <textarea id="review-comment" class="form-input review-input" placeholder="Share your thoughts on delivery speed, package safety, or courier service..." rows="2"></textarea>
+
+                                    <button type="submit" id="btn-submit-review" class="btn btn-primary btn-sm">
+                                        <span>Submit Review</span>
+                                    </button>
+                                </form>
+
+                                <div id="submitted-review-display" class="submitted-review-display hidden"></div>
+                            </div>
+
+                            <!-- Detailed Audit Trail Timeline -->
+                            <h4 class="timeline-heading">Activity & Milestone History</h4>
+                            <div id="tracking-timeline" class="timeline-list" role="list">
+                                <!-- Dynamic timeline nodes injected by JS -->
+                            </div>
+                        </div>
+
+                    </div>
+                </article>
+
+            </div>
+        </section>
+
+
+        <!-- ==================================================== -->
+        <!-- 2. ADMIN DASHBOARD CONTAINER (Hidden Initially)      -->
+        <!-- ==================================================== -->
+        <section id="admin-view" class="view-panel hidden" aria-labelledby="admin-dashboard-title">
+            
+            <div class="dashboard-header">
+                <div>
+                    <div class="hero-badge badge-admin">🛡️ Operations Control</div>
+                    <h1 id="admin-dashboard-title" class="hero-heading">Admin Management Console</h1>
+                    <p class="hero-subtext">Monitor dispatch queues, configure delivery hubs, update transit checkpoints, and export reports.</p>
+                </div>
+
+                <div class="dashboard-header-actions">
+                    <button type="button" id="btn-export-csv" class="btn btn-secondary">
+                        <span class="btn-icon">📥</span>
+                        <span>Export to CSV</span>
+                    </button>
+                    <button type="button" id="btn-open-settings" class="btn btn-secondary">
+                        <span class="btn-icon">⚙️</span>
+                        <span>Settings</span>
+                    </button>
+                    <button type="button" id="btn-refresh-admin" class="btn btn-accent">
+                        <span class="btn-icon">🔄</span>
+                        <span>Refresh Data</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- METRIC CARDS ROW -->
+            <div class="metrics-grid" id="metrics-grid">
+                
+                <div class="metric-card">
+                    <div class="metric-icon-box bg-amber-soft">📋</div>
+                    <div class="metric-details">
+                        <span class="metric-label">Total Orders</span>
+                        <h3 class="metric-value" id="metric-total-orders">0</h3>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon-box bg-yellow-soft">⏳</div>
+                    <div class="metric-details">
+                        <span class="metric-label">Pending / Placed</span>
+                        <h3 class="metric-value" id="metric-pending-orders">0</h3>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon-box bg-blue-soft">🚚</div>
+                    <div class="metric-details">
+                        <span class="metric-label">In Transit / Shipped</span>
+                        <h3 class="metric-value" id="metric-shipped-orders">0</h3>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon-box bg-green-soft">✅</div>
+                    <div class="metric-details">
+                        <span class="metric-label">Delivered</span>
+                        <h3 class="metric-value" id="metric-delivered-orders">0</h3>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ORDERS MANAGEMENT TABLE CARD -->
+            <div class="card table-card" id="admin-orders-card">
+                <div class="table-card-header">
+                    <div>
+                        <h2 class="card-title">All Customer Orders</h2>
+                        <p class="card-subtitle">Real-time order registry sorted newest first</p>
+                    </div>
+
+                    <div class="table-filter-wrapper">
+                        <input type="text" id="admin-search-orders" class="form-input table-search" placeholder="Search by ID, Customer or Item...">
+                        
+                        <select id="admin-filter-status" class="form-input table-select-filter" aria-label="Filter by Order Status">
+                            <option value="ALL">All Statuses</option>
+                            <option value="Order Placed">Order Placed</option>
+                            <option value="Confirmed">Confirmed</option>
+                            <option value="Packed">Packed</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Out for Delivery">Out for Delivery</option>
+                            <option value="Delivered">Delivered</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="data-table" id="orders-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Order ID</th>
+                                <th scope="col">Customer</th>
+                                <th scope="col">Product & Qty</th>
+                                <th scope="col">Total Amount</th>
+                                <th scope="col">Current Status</th>
+                                <th scope="col">Checkpoint Location</th>
+                                <th scope="col">Update Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-orders-tbody">
+                            <!-- Dynamic Table Rows Rendered via JS -->
+                            <tr class="table-empty-row">
+                                <td colspan="7" class="text-center py-4">Loading orders...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ==================================================== -->
+    <!-- 3. ADMIN LOGIN MODAL (Hidden Initially)              -->
+    <!-- ==================================================== -->
+    <div id="admin-modal" class="modal-overlay hidden no-print" role="dialog" aria-modal="true" aria-labelledby="modal-admin-title">
+        <div class="modal-card">
+            
+            <div class="modal-header">
+                <div class="modal-icon-badge">🔐</div>
+                <h2 id="modal-admin-title" class="modal-title">Admin Access Verification</h2>
+                <p class="modal-subtitle">Enter your administrative security PIN to unlock operations</p>
+            </div>
+
+            <form id="admin-login-form" class="modal-form">
+                <div class="form-group">
+                    <label for="admin-pin" class="form-label">Security PIN <span class="required">*</span></label>
+                    <input type="password" id="admin-pin" class="form-input pin-input" placeholder="••••••••" maxlength="12" autofocus autocomplete="current-password" required>
+                    <span class="form-hint">Default Security PIN: <code>admin123</code></span>
+                </div>
+
+                <div id="admin-modal-feedback" class="feedback-box feedback-error hidden" role="alert"></div>
+
+                <div class="modal-actions">
+                    <button type="button" id="btn-cancel-admin-modal" class="btn btn-secondary col-half">
+                        <span>Cancel</span>
+                    </button>
+                    <button type="submit" id="btn-unlock-admin" class="btn btn-primary col-half">
+                        <span>Unlock</span>
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- ==================================================== -->
+    <!-- 4. ADMIN SETTINGS & CONFIG MODAL (Hidden Initially)  -->
+    <!-- ==================================================== -->
+    <div id="admin-settings-modal" class="modal-overlay hidden no-print" role="dialog" aria-modal="true" aria-labelledby="modal-settings-title">
+        <div class="modal-card modal-card-lg">
+            
+            <div class="modal-header">
+                <div class="modal-icon-badge">⚙️</div>
+                <h2 id="modal-settings-title" class="modal-title">System & Logistics Settings</h2>
+                <p class="modal-subtitle">Configure administrative passcode and manage active dispatch hubs</p>
+            </div>
+
+            <form id="admin-settings-form" class="modal-form">
+                
+                <!-- Update Admin Passcode -->
+                <div class="form-group">
+                    <label for="settings-admin-pin" class="form-label">Admin Security PIN</label>
+                    <input type="text" id="settings-admin-pin" class="form-input" placeholder="Enter new PIN" required>
+                    <span class="form-hint">Used to verify administrator access during login.</span>
+                </div>
+
+                <!-- Manage Delivery Hubs / Cities -->
+                <div class="form-group">
+                    <label class="form-label">Delivery Hubs & Transit Checkpoints</label>
+                    <div class="hub-add-wrapper">
+                        <input type="text" id="new-hub-input" class="form-input" placeholder="e.g. East Coast Freight Gateway">
+                        <button type="button" id="btn-add-hub" class="btn btn-secondary">
+                            <span>Add Hub</span>
+                        </button>
+                    </div>
+                    <div id="hub-tags-container" class="hub-tags-container">
+                        <!-- Dynamic hub pills rendered by JS -->
+                    </div>
+                    <span class="form-hint">These hubs populate the quick location dropdowns during order status updates.</span>
+                </div>
+
+                <div id="settings-modal-feedback" class="feedback-box hidden" role="alert"></div>
+
+                <div class="modal-actions">
+                    <button type="button" id="btn-cancel-settings" class="btn btn-secondary col-half">
+                        <span>Cancel</span>
+                    </button>
+                    <button type="submit" id="btn-save-settings" class="btn btn-primary col-half">
+                        <span>Save Changes</span>
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- ==================================================== -->
+    <!-- 5. SECURE DELIVERY OTP VERIFICATION MODAL (ADMIN)    -->
+    <!-- ==================================================== -->
+    <div id="admin-otp-modal" class="modal-overlay hidden no-print" role="dialog" aria-modal="true" aria-labelledby="modal-otp-title">
+        <div class="modal-card">
+            
+            <div class="modal-header">
+                <div class="modal-icon-badge bg-green-soft" style="color: #10B981; border-color: #A7F3D0;">🔑</div>
+                <h2 id="modal-otp-title" class="modal-title">Delivery OTP Verification</h2>
+                <p class="modal-subtitle">Enter the customer's 4-digit verification PIN to confirm physical delivery handover</p>
+            </div>
+
+            <form id="admin-otp-form" class="modal-form">
+                <div class="form-group">
+                    <label for="admin-delivery-otp-input" class="form-label">Customer 4-Digit OTP <span class="required">*</span></label>
+                    <input type="text" id="admin-delivery-otp-input" class="form-input pin-input" placeholder="••••" maxlength="4" autofocus required>
+                    <span class="form-hint" id="admin-otp-hint">Ask customer for the verification PIN displayed in their tracking portal.</span>
+                </div>
+
+                <div id="admin-otp-feedback" class="feedback-box feedback-error hidden" role="alert"></div>
+
+                <div class="modal-actions">
+                    <button type="button" id="btn-cancel-deliver-modal" class="btn btn-secondary col-half">
+                        <span>Cancel</span>
+                    </button>
+                    <button type="submit" id="btn-confirm-deliver" class="btn btn-primary col-half" style="background-color: #10B981;">
+                        <span>Confirm Delivery</span>
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- ==================================================== -->
+    <!-- 6. PRINTABLE INVOICE / RECEIPT MODAL                -->
+    <!-- ==================================================== -->
+    <div id="invoice-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-invoice-title">
+        <div class="modal-card modal-invoice-card">
+            
+            <div class="modal-header modal-invoice-header no-print">
+                <h2 id="modal-invoice-title" class="modal-title">Official Order Receipt</h2>
+                <button type="button" id="btn-close-invoice-x" class="btn-close-modal" aria-label="Close invoice">&times;</button>
+            </div>
+
+            <!-- PRINTABLE INVOICE DOCUMENT -->
+            <div id="printable-invoice" class="printable-invoice">
+                
+                <div class="invoice-brand-header">
+                    <div class="invoice-brand">
+                        <span class="brand-icon">📦</span>
+                        <div>
+                            <h3 class="invoice-brand-name">SwiftTrack Express</h3>
+                            <p class="invoice-sub">Fast, Transparent & Reliable Logistics</p>
+                        </div>
+                    </div>
+                    <div class="invoice-meta-right">
+                        <span class="invoice-tag">OFFICIAL RECEIPT</span>
+                        <h4 class="invoice-number" id="invoice-order-id">ORD1001</h4>
+                        <p class="invoice-date" id="invoice-date">Date: Sep 21, 2026</p>
+                    </div>
+                </div>
+
+                <hr class="invoice-divider">
+
+                <div class="invoice-parties-grid">
+                    <div class="party-box">
+                        <span class="party-label">Billed / Shipped To:</span>
+                        <h4 class="party-name" id="invoice-customer-name">Alex Morgan</h4>
+                        <p class="party-detail" id="invoice-location">Destination: Warehouse - Central Hub</p>
+                        <p class="party-detail" id="invoice-est-delivery">Est. Delivery: Sep 24, 2026</p>
+                    </div>
+                    <div class="party-box text-right">
+                        <span class="party-label">Current Fulfillment Status:</span>
+                        <div style="margin-top: 0.35rem;">
+                            <span class="status-badge" id="invoice-status-badge">Order Placed</span>
+                        </div>
+                        <p class="party-detail" style="margin-top: 0.5rem;" id="invoice-last-updated">Last Milestone: Just now</p>
+                    </div>
+                </div>
+
+                <!-- ITEMS TABLE -->
+                <table class="invoice-items-table">
+                    <thead>
+                        <tr>
+                            <th>Item Description</th>
+                            <th class="text-center">Qty</th>
+                            <th class="text-right">Unit Price</th>
+                            <th class="text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invoice-items-tbody">
+                        <tr>
+                            <td id="invoice-item-name">Sony WH-1000XM5 Headphones</td>
+                            <td class="text-center" id="invoice-item-qty">1</td>
+                            <td class="text-right" id="invoice-item-price">$299.99</td>
+                            <td class="text-right" id="invoice-item-total">$299.99</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- TOTALS SECTION -->
+                <div class="invoice-totals-wrapper">
+                    <div class="invoice-totals-table">
+                        <div class="total-row">
+                            <span>Subtotal:</span>
+                            <span id="invoice-subtotal">$299.99</span>
+                        </div>
+                        <div class="total-row">
+                            <span>Standard Ground Shipping:</span>
+                            <span class="text-success">FREE</span>
+                        </div>
+                        <div class="total-row">
+                            <span>Estimated Tax (0%):</span>
+                            <span>$0.00</span>
+                        </div>
+                        <div class="total-row grand-total-row">
+                            <span>Grand Total:</span>
+                            <span id="invoice-grand-total">$299.99</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="invoice-footer">
+                    <p>Thank you for choosing SwiftTrack Logistics! For support, quote your Order ID.</p>
+                    <p class="invoice-footer-sub">SwiftTrack System Generated Document • All rights reserved.</p>
+                </div>
+
+            </div>
+
+            <!-- INVOICE MODAL ACTION BUTTONS -->
+            <div class="modal-actions no-print" style="margin-top: 1.5rem;">
+                <button type="button" id="btn-close-invoice" class="btn btn-secondary col-half">
+                    <span>Close</span>
+                </button>
+                <button type="button" id="btn-print-invoice" class="btn btn-primary col-half">
+                    <span>🖨️ Print / Save PDF</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- NOTIFICATION TOAST CONTAINER -->
+    <div id="toast-container" class="toast-container no-print" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Leaflet.js Map Library -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    
+    <!-- QRCode.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <!-- Core Application Logic -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

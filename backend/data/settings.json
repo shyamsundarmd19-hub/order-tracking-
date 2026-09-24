@@ -1,0 +1,12 @@
+{
+  "setting_id": "app_config",
+  "admin_pin": "admin123",
+  "delivery_hubs": [
+    "Warehouse - Central Hub",
+    "Regional Sorting Facility - North",
+    "Regional Sorting Facility - South",
+    "Air Cargo Express Terminal",
+    "Metro Dispatch & Fulfillment Hub",
+    "Local Delivery Center"
+  ]
+}
